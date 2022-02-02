@@ -1,0 +1,52 @@
+version: '3'
+services:
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: ./docker/fastapi/dockerfile
+    container_name: fastapi
+    #restart: always
+    restart: unless-stopped
+
+    #環境変数
+    environment:
+      APP_ENV: "Production"
+      DEBUG: "False"
+      TZ: 'Asia/Tokyo'
+
+    volumes:
+      - ./app:/src
+    networks:
+      - frontend
+    command: gunicorn fastapi_lt.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:5000
+    tty: true
+
+
+  nginx:
+    build:
+      context: .
+      dockerfile: ./docker/nginx/Dockerfile
+    container_name: nginx
+    #restart: always
+    restart: unless-stopped
+    environment:
+      APP_ENV: "prod"
+      APP_NAME: "nginx"
+      SERVICE_NAME: "nginx"
+    ports:
+      - "8888:80"
+      #- "443:443"
+    volumes:
+      #Dockerfileでコピーした後でもマウントすればlogや変更が取れるので忘れない
+      - ./nginx/log:/var/log/nginx
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - fastapi
+    networks:
+      - frontend
+    tty: true
+
+networks:
+  frontend:
+    driver: bridge

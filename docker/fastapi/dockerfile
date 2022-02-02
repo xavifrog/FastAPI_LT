@@ -1,0 +1,14 @@
+FROM python:3.9-buster
+
+COPY ./app /src
+
+WORKDIR /src
+
+RUN apt-get update && \
+  apt-get install -y vim && \
+  apt-get install -y libmecab-dev && \
+  pip install --upgrade pip && \
+  pip install poetry && \
+  poetry export --without-hashes --dev --output poetry-requirements.txt && \
+  pip install -r poetry-requirements.txt && \
+  rm poetry-requirements.txt
